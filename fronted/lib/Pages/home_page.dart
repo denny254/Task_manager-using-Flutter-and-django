@@ -1,9 +1,11 @@
 import 'dart:convert';
-
+import 'package:fronted/Widgets/app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:fronted/Constants/api.dart';
 import 'package:fronted/Models/todo.dart';
+import 'package:fronted/Widgets/todo_container.dart';
 import 'package:http/http.dart' as http;
+import 'package:pie_chart/pie_chart.dart';
 
 class HomePage extends StatefulWidget {
   HomePage({Key? key}) : super(key: key);
@@ -13,7 +15,10 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  int done = 0;
+  
   List<Todo> myTodos = [];
+  bool isLoading = true;
   void fetchData() async {
     try{
        http.Response response = await http.get(Uri.parse(api));
@@ -26,9 +31,15 @@ class _HomePageState extends State<HomePage> {
           isDone: todo['isDone'],
           date: todo['date'],
         );
+        if(todo['isDone']) {
+          done += 1;
+        }
         myTodos.add(t);
        });
        print(myTodos.length);
+       setState((){
+        isLoading = false;
+       });
        
     }
     catch (e) {
@@ -45,7 +56,30 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(),
+      backgroundColor: Color(0xFF001133),
+      appBar: customAppBar(),
+      body: Column(
+        children: [
+          PieChart(
+            dataMap: {
+              "Done":done.toDouble(),
+              "Incomplete": (myTodos.length - done).toDouble()
+            },
+          ),
+          isLoading ? CircularProgressIndicator(): 
+                      ListView(
+                        children: myTodos.map((e) {
+                          return TodoContainer(
+                            id: e.id, 
+                            title: e.title, 
+                            desc: e.desc, 
+                            
+                            isDone: e.isDone,
+                            );
+                        }).toList(),
+                      ),
+        ],
+      )
     );
   }
 }
