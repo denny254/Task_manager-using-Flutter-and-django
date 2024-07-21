@@ -6,6 +6,7 @@ class TodoContainer extends StatelessWidget {
   final int id;
   final String title;
   final String desc;
+  final Function onPressed;
   final bool isDone;
   const TodoContainer({
     Key? key, 
@@ -13,6 +14,7 @@ class TodoContainer extends StatelessWidget {
     required this.title, 
     required this.desc, 
     required this.isDone,
+    required this.onPressed,
     }): super(key: key);
 
   @override
@@ -43,7 +45,7 @@ class TodoContainer extends StatelessWidget {
                         fontSize: 17,
                     ),
                     ),
-                    const IconButton(onPressed: null, 
+                    IconButton(onPressed: () => onPressed(), 
                     icon: Icon(Icons.delete,
                     color: Colors.white,
                     size: 30,
