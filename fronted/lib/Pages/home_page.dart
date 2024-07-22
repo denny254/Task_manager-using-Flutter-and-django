@@ -1,12 +1,9 @@
-import 'dart:convert';
 import 'package:fronted/Constants/colors.dart';
 import 'package:fronted/Utils/methods.dart';
 import 'package:fronted/Widgets/app_bar.dart';
 import 'package:flutter/material.dart';
-import 'package:fronted/Constants/api.dart';
 import 'package:fronted/Models/todo.dart';
 import 'package:fronted/Widgets/todo_container.dart';
-import 'package:http/http.dart' as http;
 import 'package:pie_chart/pie_chart.dart';
 
 class HomePage extends StatefulWidget {
@@ -18,18 +15,24 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int done = 0;
-  
   List<Todo> myTodos = [];
   bool isLoading = true;
-  
+
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descController = TextEditingController();
-  
+
   get title => null;
-  
   get desc => null;
 
-  void _showModel() {
+  void _showModel({Todo? todo}) {
+    if (todo != null) {
+      _titleController.text = todo.title;
+      _descController.text = todo.desc;
+    } else {
+      _titleController.clear();
+      _descController.clear();
+    }
+
     showModalBottomSheet(
       context: context,
       builder: (BuildContext context) {
@@ -39,7 +42,7 @@ class _HomePageState extends State<HomePage> {
             child: Column(
               children: [
                 Text(
-                  "Add your Todos",
+                  todo == null ? "Add your Todos" : "Update your Todo",
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -49,7 +52,6 @@ class _HomePageState extends State<HomePage> {
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: TextFormField(
-                    initialValue: title,
                     controller: _titleController,
                     decoration: InputDecoration(
                       border: OutlineInputBorder(),
@@ -60,7 +62,6 @@ class _HomePageState extends State<HomePage> {
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: TextFormField(
-                    initialValue: desc,
                     controller: _descController,
                     decoration: InputDecoration(
                       border: OutlineInputBorder(),
@@ -70,12 +71,20 @@ class _HomePageState extends State<HomePage> {
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    _postData(title: _titleController.text, desc: _descController.text);
-                    _titleController.clear();
-                    _descController.clear();
+                    if (todo == null) {
+                      _postData(
+                          title: _titleController.text,
+                          desc: _descController.text);
+                    } else {
+                      _updateTodo(
+                          id: todo.id,
+                          title: _titleController.text,
+                          desc: _descController.text,
+                          isDone: todo.isDone);
+                    }
                     Navigator.pop(context);
                   },
-                  child: Text("Add"),
+                  child: Text(todo == null ? "Add" : "Update"),
                 ),
               ],
             ),
@@ -86,77 +95,37 @@ class _HomePageState extends State<HomePage> {
   }
 
   void fetchData() async {
-    try {
-      http.Response response = await http.get(Uri.parse(api));
-      var data = json.decode(response.body);
-      data.forEach((todo) {
-        Todo t = Todo(
-          id: todo['id'],
-          title: todo['title'],
-          desc: todo['desc'],
-          isDone: todo['isDone'],
-          date: todo['date'],
-        );
-        if (todo['isDone']) {
-          done += 1;
-        }
-        myTodos.add(t);
-      });
-      setState(() {
-        isLoading = false;
-      });
-    } catch (e) {
-      print("Error is $e");
-    }
+    List<Todo> todos = await helperFunction.fetchData();
+    setState(() {
+      myTodos = todos;
+      done = todos.where((todo) => todo.isDone).length;
+      isLoading = false;
+    });
   }
 
   void _postData({required String title, required String desc}) async {
-    try {
-      http.Response response = await http.post(
-        Uri.parse(api),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: jsonEncode(<String, dynamic>{
-          "title": title,
-          "desc": desc,
-          "isDone": false,
-        }),
-      );
-      if (response.statusCode == 201) {
-        setState(() {
-          myTodos = [];
-        });
-        fetchData();
-      } else {
-        print("Something went wrong");
-      }
-    } catch (e) {
-      print("Error is $e");
-    }
+    await helperFunction.postData(title: title, desc: desc);
+    fetchData();
   }
 
-  void delete_todo(String id) async {
-    try {
-      // ignore: unused_local_variable
-      http.Response response = await http.delete(Uri.parse(api + "/" + id));
-      setState(() {
-        myTodos = [];
-      });
-      fetchData();
-    } catch (e) {
-      print(e);
-    }
+  void _updateTodo(
+      {required int id,
+      required String title,
+      required String desc,
+      required bool isDone}) async {
+    await helperFunction.updateTodo(
+        id: id, title: title, desc: desc, isDone: isDone);
+    fetchData();
+  }
+
+  void _deleteTodo(int id) async {
+    await helperFunction.deleteTodo(id);
+    fetchData();
   }
 
   @override
   void initState() {
-    helperFunction.fetchData().then((value){
-      setState(() {
-        myTodos = value;
-      });
-      print(value.length);
-    });
+    fetchData();
     super.initState();
   }
 
@@ -181,10 +150,15 @@ class _HomePageState extends State<HomePage> {
                     children: myTodos.map((e) {
                       return TodoContainer(
                         id: e.id,
-                        onPressed: () {},
+                        onPressed: () {
+                          _deleteTodo(e.id);
+                        },
                         title: e.title,
                         desc: e.desc,
                         isDone: e.isDone,
+                        onUpdate: () {
+                          _showModel(todo: e);
+                        },
                       );
                     }).toList(),
                   ),
@@ -192,7 +166,7 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _showModel,
+        onPressed: () => _showModel(),
         child: Icon(Icons.add),
       ),
     );

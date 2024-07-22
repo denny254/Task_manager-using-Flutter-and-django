@@ -6,6 +6,7 @@ class TodoContainer extends StatelessWidget {
   final String title;
   final String desc;
   final Function onPressed;
+  final Function onUpdate;
   final bool isDone;
 
   const TodoContainer({
@@ -15,6 +16,7 @@ class TodoContainer extends StatelessWidget {
     required this.desc,
     required this.isDone,
     required this.onPressed,
+    required this.onUpdate,
   }) : super(key: key);
 
   @override
@@ -26,50 +28,7 @@ class TodoContainer extends StatelessWidget {
       padding: const EdgeInsets.all(8.0),
       child: InkWell(
         onTap: () {
-          showModalBottomSheet(
-      context: context,
-      builder: (BuildContext context) {
-        return Container(
-          height: MediaQuery.of(context).size.height / 2,
-          child: Center(
-            child: Column(
-              children: [
-                Text(
-                  "Update your Todos",
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(height: 10),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: TextFormField(
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: 'Title',
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: TextFormField(
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: 'Description',
-                    ),
-                  ),
-                ),
-                ElevatedButton(
-                  onPressed: null,
-                  child: Text("Add"),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
+          onUpdate();
         },
         child: Container(
           width: double.infinity,
