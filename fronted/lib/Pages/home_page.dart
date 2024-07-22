@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:fronted/Constants/colors.dart';
+import 'package:fronted/Utils/methods.dart';
 import 'package:fronted/Widgets/app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:fronted/Constants/api.dart';
@@ -22,6 +24,10 @@ class _HomePageState extends State<HomePage> {
   
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descController = TextEditingController();
+  
+  get title => null;
+  
+  get desc => null;
 
   void _showModel() {
     showModalBottomSheet(
@@ -43,6 +49,7 @@ class _HomePageState extends State<HomePage> {
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: TextFormField(
+                    initialValue: title,
                     controller: _titleController,
                     decoration: InputDecoration(
                       border: OutlineInputBorder(),
@@ -53,6 +60,7 @@ class _HomePageState extends State<HomePage> {
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: TextFormField(
+                    initialValue: desc,
                     controller: _descController,
                     decoration: InputDecoration(
                       border: OutlineInputBorder(),
@@ -143,14 +151,19 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void initState() {
-    fetchData();
+    helperFunction.fetchData().then((value){
+      setState(() {
+        myTodos = value;
+      });
+      print(value.length);
+    });
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFF001133),
+      backgroundColor: bg,
       appBar: customAppBar(),
       body: SingleChildScrollView(
         scrollDirection: Axis.vertical,
@@ -168,7 +181,7 @@ class _HomePageState extends State<HomePage> {
                     children: myTodos.map((e) {
                       return TodoContainer(
                         id: e.id,
-                        onPressed: () => delete_todo(e.id.toString()),
+                        onPressed: () {},
                         title: e.title,
                         desc: e.desc,
                         isDone: e.isDone,
